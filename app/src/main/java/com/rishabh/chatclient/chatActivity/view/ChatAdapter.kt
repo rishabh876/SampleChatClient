@@ -17,10 +17,12 @@ class ChatAdapter : RecyclerView.Adapter<ChatAdapter.ChatViewHolder>() {
     private val TYPE_RECEIVED_MESSAGE = 1
 
     private val chatList = LinkedList<ChatMessage>()
+    private var recyclerView: RecyclerView? = null
 
     fun addMessage(message: ChatMessage) {
         chatList.add(message)
         notifyItemInserted(chatList.size - 1)
+        recyclerView?.scrollToPosition(chatList.size - 1)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ChatViewHolder {
@@ -44,6 +46,16 @@ class ChatAdapter : RecyclerView.Adapter<ChatAdapter.ChatViewHolder>() {
             true -> TYPE_SENT_MESSAGE
             else -> TYPE_RECEIVED_MESSAGE
         }
+    }
+
+    override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
+        super.onAttachedToRecyclerView(recyclerView)
+        this.recyclerView = recyclerView
+    }
+
+    override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
+        super.onDetachedFromRecyclerView(recyclerView)
+        this.recyclerView = null
     }
 
     inner class ChatViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {

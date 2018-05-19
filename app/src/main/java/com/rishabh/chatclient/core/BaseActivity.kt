@@ -26,6 +26,18 @@ abstract class BaseActivity<V : BaseView, P : BasePresenter<V>> :
 
     override fun createPresenter(): P = mPresenter
 
+    @CallSuper
+    override fun onStart() {
+        super.onStart()
+        getPresenter().onStart()
+    }
+
+    @CallSuper
+    override fun onStop() {
+        getPresenter().onStop()
+        super.onStop()
+    }
+
     override fun supportFragmentInjector(): AndroidInjector<Fragment> {
         return fragmentInjector
     }
