@@ -39,6 +39,8 @@
         android:layout_marginRight="16dp"
         android:focusable="true"
         android:focusableInTouchMode="true"
+        android:imeOptions="actionSend"
+        android:inputType="textShortMessage"
         android:maxLines="3"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/send_button"

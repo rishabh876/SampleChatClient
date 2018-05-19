@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.view.View
+import android.view.inputmethod.EditorInfo
 import android.widget.EditText
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -16,6 +17,7 @@ import com.rishabh.chatclient.R
 import com.rishabh.chatclient.chatActivity.presenter.ChatActivityPresenter
 import com.rishabh.chatclient.core.BaseActivity
 import com.rishabh.chatclient.model.ChatMessage
+import io.reactivex.Observable
 
 
 class ChatActivity : BaseActivity<ChatActivityPresenter.View, ChatActivityPresenter>(), ChatActivityPresenter.View {
@@ -47,7 +49,19 @@ class ChatActivity : BaseActivity<ChatActivityPresenter.View, ChatActivityPresen
 
     override fun textChangeObservable() = RxTextView.afterTextChangeEvents(chatEditText).map { it.editable().toString() }
 
-    override fun sendButtonClickObservable() = RxView.clicks(sendButton).map { chatEditText.text.toString() }
+    override fun sendButtonClickObservable(): Observable<String> {
+        return RxView.clicks(sendButton).map { chatEditText.text.toString() }
+                .mergeWith(Observable.create {
+                    chatEditText.setOnEditorActionListener { v, actionId, event ->
+                        var consumed = false
+                        if (actionId == EditorInfo.IME_ACTION_SEND) {
+                            it.onNext(chatEditText.text.toString())
+                            consumed = true
+                        }
+                        consumed
+                    }
+                })
+    }
 
     override fun onReplyReceived(chatMessage: ChatMessage) = adapter.addMessage(chatMessage)
 

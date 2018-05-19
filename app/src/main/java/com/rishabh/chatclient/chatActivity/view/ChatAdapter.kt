@@ -22,7 +22,7 @@ class ChatAdapter : RecyclerView.Adapter<ChatAdapter.ChatViewHolder>() {
     fun addMessage(message: ChatMessage) {
         chatList.add(message)
         notifyItemInserted(chatList.size - 1)
-        recyclerView?.scrollToPosition(chatList.size - 1)
+        recyclerView?.smoothScrollToPosition(chatList.size - 1)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ChatViewHolder {
@@ -62,6 +62,9 @@ class ChatAdapter : RecyclerView.Adapter<ChatAdapter.ChatViewHolder>() {
         chatHistory?.let {
             chatList.addAll(it)
             notifyItemRangeInserted(0, chatList.size)
+            recyclerView?.post {
+                recyclerView!!.scrollToPosition(chatList.size - 1)
+            }
         }
     }
 
