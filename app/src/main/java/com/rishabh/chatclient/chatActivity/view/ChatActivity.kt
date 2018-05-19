@@ -51,17 +51,24 @@ class ChatActivity : BaseActivity<ChatActivityPresenter.View, ChatActivityPresen
 
     override fun sendButtonClickObservable(): Observable<String> {
         return RxView.clicks(sendButton).map { chatEditText.text.toString() }
-                .mergeWith(Observable.create {
-                    chatEditText.setOnEditorActionListener { v, actionId, event ->
-                        var consumed = false
-                        if (actionId == EditorInfo.IME_ACTION_SEND) {
-                            it.onNext(chatEditText.text.toString())
-                            consumed = true
-                        }
-                        consumed
-                    }
-                })
+                .mergeWith(editTextSendClickObservable())
     }
+
+    private fun editTextSendClickObservable() =
+            Observable.create<String> {
+                chatEditText.setOnEditorActionListener { v, actionId, event ->
+                    var consumed = false
+                    if (actionId == EditorInfo.IME_ACTION_SEND) {
+                        val message = chatEditText.text.toString()
+                        if (!message.isBlank()) {
+                            it.onNext(message)
+                        }
+                        consumed = true
+                    }
+                    consumed
+                }
+            }
+
 
     override fun onReplyReceived(chatMessage: ChatMessage) = adapter.addMessage(chatMessage)
 
