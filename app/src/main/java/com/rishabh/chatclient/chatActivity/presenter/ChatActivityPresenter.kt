@@ -4,14 +4,47 @@ import com.rishabh.chatclient.core.BasePresenter
 import com.rishabh.chatclient.core.BaseView
 import com.rishabh.chatclient.model.ChatMessage
 import com.rishabh.chatclient.model.ChatResponse
+import com.rishabh.chatclient.repository.disk.ChatHistoryDao
 import com.rishabh.chatclient.repository.network.RestService
+import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 import javax.inject.Inject
 
-class ChatActivityPresenter @Inject constructor(private val restService: RestService)
+class ChatActivityPresenter @Inject constructor(private val restService: RestService,
+                                                private val chatHistoryDao: ChatHistoryDao)
     : BasePresenter<ChatActivityPresenter.View>() {
+
+    fun onViewBinded() {
+        chatHistoryDao.all
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .doOnSubscribe {
+                    ifViewAttached {
+                        it.disableSendButton()
+                        it.showSendProgress()
+                    }
+                }
+                .doOnEvent { t1, t2 ->
+                    ifViewAttached {
+                        it.enableSendButton()
+                        it.hideSendProgress()
+                    }
+                }
+                .subscribe({
+                    val chatHistory = it
+                    ifViewAttached { it.addHistory(chatHistory) }
+                    checkIfLastMessageNotSent(chatHistory)
+                }, {}).let { compositeDisposable.add(it) }
+    }
+
+    private fun checkIfLastMessageNotSent(chatHistory: List<ChatMessage>?) {
+        val lastMessageSentByMe = chatHistory?.takeIf { it.isNotEmpty() }?.last()?.sentByMe
+        if (lastMessageSentByMe == true) {
+            sendMessage(chatHistory.last().message)
+        }
+    }
 
     override fun onStart() {
         super.onStart()
@@ -32,6 +65,10 @@ class ChatActivityPresenter @Inject constructor(private val restService: RestSer
             addSendMessageToList(message)
             it.disableSendButton()
         }
+        sendMessage(message)
+    }
+
+    private fun sendMessage(message: String) {
         restService.getResponse(message)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -57,14 +94,18 @@ class ChatActivityPresenter @Inject constructor(private val restService: RestSer
 
     private fun addSendMessageToList(message: String) {
         val chatMessage = ChatMessage(true, message, System.currentTimeMillis())
+        Completable.fromAction { chatHistoryDao.insert(chatMessage) }
+                .subscribeOn(Schedulers.io())
+                .subscribe()
         ifViewAttached { it.onSentMessage(chatMessage) }
     }
 
     private fun onReplyReceived(it: ChatResponse?) {
         val chatMessage = ChatMessage(false, it?.message?.message ?: "", System.currentTimeMillis())
-        ifViewAttached {
-            it.onReplyReceived(chatMessage)
-        }
+        Completable.fromAction { chatHistoryDao.insert(chatMessage) }
+                .subscribeOn(Schedulers.io())
+                .subscribe()
+        ifViewAttached { it.onReplyReceived(chatMessage) }
     }
 
     private fun onTextTyped(typedMessage: String?) {
@@ -86,5 +127,6 @@ class ChatActivityPresenter @Inject constructor(private val restService: RestSer
         fun sendButtonClickObservable(): Observable<String>
         fun onSentMessage(chatMessage: ChatMessage)
         fun clearChatBox()
+        fun addHistory(chatHistory: List<ChatMessage>?)
     }
 }

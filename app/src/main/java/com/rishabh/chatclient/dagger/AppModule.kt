@@ -1,7 +1,11 @@
 package com.rishabh.chatclient.dagger
 
+import android.arch.persistence.room.Room
 import android.content.Context
 import com.rishabh.chatclient.app.ChatClientApp
+import com.rishabh.chatclient.repository.ChatDatabase
+import com.rishabh.chatclient.repository.disk.ChatHistoryDao
+import com.rishabh.chatclient.repository.disk.DatabaseConstants
 import com.rishabh.chatclient.repository.network.NetworkConstants
 import com.rishabh.chatclient.repository.network.RestService
 import dagger.Module
@@ -53,5 +57,14 @@ class AppModule {
                 .cache(cache)
                 .addInterceptor(logging)
                 .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideChatsDao(chatClientApp: ChatClientApp): ChatHistoryDao {
+        return Room.databaseBuilder(chatClientApp,
+                ChatDatabase::class.java,
+                DatabaseConstants.CHAT_HISTORY_DB_NAME)
+                .build().chatHistoryDao()
     }
 }

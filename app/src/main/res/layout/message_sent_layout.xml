@@ -22,16 +22,16 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:background="@drawable/v2_chat_sent_bubble_bg"
+        android:gravity="center_vertical"
         android:paddingBottom="8dp"
         android:paddingLeft="16dp"
-        android:paddingRight="16dp"
+        android:paddingRight="24dp"
         android:paddingTop="8dp"
-        android:gravity="center_vertical"
         android:textColor="@android:color/white"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="1"
         app:layout_constraintStart_toStartOf="@id/guideline"
         app:layout_constraintWidth_default="wrap"
-        tools:text="Hello, how are you?" />
+        tools:text="Hey, how are you?" />
 
 </android.support.constraint.ConstraintLayout>

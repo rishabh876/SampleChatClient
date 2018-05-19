@@ -58,6 +58,13 @@ class ChatAdapter : RecyclerView.Adapter<ChatAdapter.ChatViewHolder>() {
         this.recyclerView = null
     }
 
+    fun addAllMessages(chatHistory: List<ChatMessage>?) {
+        chatHistory?.let {
+            chatList.addAll(it)
+            notifyItemRangeInserted(0, chatList.size)
+        }
+    }
+
     inner class ChatViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         @BindView(R.id.message_tv)
         lateinit var messageTv: TextView

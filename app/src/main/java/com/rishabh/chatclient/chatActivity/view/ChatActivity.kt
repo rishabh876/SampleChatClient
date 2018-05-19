@@ -36,6 +36,7 @@ class ChatActivity : BaseActivity<ChatActivityPresenter.View, ChatActivityPresen
         setContentView(R.layout.chat_activity)
         ButterKnife.bind(this)
         initChatView()
+        getPresenter().onViewBinded()
     }
 
     private fun initChatView() {
@@ -51,6 +52,8 @@ class ChatActivity : BaseActivity<ChatActivityPresenter.View, ChatActivityPresen
     override fun onReplyReceived(chatMessage: ChatMessage) = adapter.addMessage(chatMessage)
 
     override fun onSentMessage(chatMessage: ChatMessage) = adapter.addMessage(chatMessage)
+
+    override fun addHistory(chatHistory: List<ChatMessage>?) = adapter.addAllMessages(chatHistory)
 
     override fun clearChatBox() = chatEditText.setText("")
 
