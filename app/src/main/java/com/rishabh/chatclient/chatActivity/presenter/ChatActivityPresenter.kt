@@ -19,6 +19,10 @@ class ChatActivityPresenter @Inject constructor(private val restService: RestSer
     private var notSendMessage: String? = null
 
     fun onViewBinded() {
+        fetchHistory()
+    }
+
+    private fun fetchHistory() {
         chatHistoryDao.all
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
