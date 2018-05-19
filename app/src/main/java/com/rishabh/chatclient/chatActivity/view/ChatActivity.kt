@@ -1,5 +1,12 @@
 package com.rishabh.chatclient.chatActivity.view
 
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.net.ConnectivityManager
+import android.net.ConnectivityManager.CONNECTIVITY_ACTION
+import android.net.NetworkInfo
 import android.os.Bundle
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
@@ -19,7 +26,6 @@ import com.rishabh.chatclient.core.BaseActivity
 import com.rishabh.chatclient.model.ChatMessage
 import io.reactivex.Observable
 
-
 class ChatActivity : BaseActivity<ChatActivityPresenter.View, ChatActivityPresenter>(), ChatActivityPresenter.View {
 
     @BindView(R.id.recycler_view)
@@ -32,6 +38,7 @@ class ChatActivity : BaseActivity<ChatActivityPresenter.View, ChatActivityPresen
     lateinit var progressBar: ProgressBar
 
     private val adapter: ChatAdapter by lazy { ChatAdapter() }
+    private var networkStateReceiver: BroadcastReceiver? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,6 +46,36 @@ class ChatActivity : BaseActivity<ChatActivityPresenter.View, ChatActivityPresen
         ButterKnife.bind(this)
         initChatView()
         getPresenter().onViewBinded()
+        supportActionBar?.title = "ChatBot"
+    }
+
+    override fun onStart() {
+        super.onStart()
+        checkNetworkConnection()
+        registerNetworkStateReceiver()
+    }
+
+    private fun registerNetworkStateReceiver() {
+        networkStateReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                checkNetworkConnection()
+            }
+        }
+        registerReceiver(networkStateReceiver, IntentFilter(CONNECTIVITY_ACTION))
+    }
+
+    private fun checkNetworkConnection() {
+        val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val activeNetwork: NetworkInfo? = cm.activeNetworkInfo
+        val isConnected: Boolean = activeNetwork?.isConnectedOrConnecting == true
+        if (isConnected) {
+            getPresenter().onNetworkConnected()
+        }
+    }
+
+    override fun onStop() {
+        unregisterReceiver(networkStateReceiver)
+        super.onStop()
     }
 
     private fun initChatView() {
@@ -70,9 +107,17 @@ class ChatActivity : BaseActivity<ChatActivityPresenter.View, ChatActivityPresen
             }
 
 
-    override fun onReplyReceived(chatMessage: ChatMessage) = adapter.addMessage(chatMessage)
+    override fun onReplyReceived(chatMessage: ChatMessage) {
+        if (!chatMessage.sentByMe) {
+            supportActionBar?.subtitle = ""
+        }
+        adapter.addMessage(chatMessage)
+    }
 
-    override fun onSentMessage(chatMessage: ChatMessage) = adapter.addMessage(chatMessage)
+    override fun onSentMessage(chatMessage: ChatMessage) {
+        adapter.addMessage(chatMessage)
+        supportActionBar?.subtitle = "Sending..."
+    }
 
     override fun addHistory(chatHistory: List<ChatMessage>?) = adapter.addAllMessages(chatHistory)
 
@@ -86,7 +131,8 @@ class ChatActivity : BaseActivity<ChatActivityPresenter.View, ChatActivityPresen
 
     override fun hideSendProgress() = progressBar.setVisibility(View.GONE)
 
-    override fun showError(message: String?) {
+    override fun showSendError(message: String?) {
         Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+        supportActionBar?.subtitle = ""
     }
 }

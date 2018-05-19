@@ -16,6 +16,8 @@ class ChatActivityPresenter @Inject constructor(private val restService: RestSer
                                                 private val chatHistoryDao: ChatHistoryDao)
     : BasePresenter<ChatActivityPresenter.View>() {
 
+    private var notSendMessage: String? = null
+
     fun onViewBinded() {
         chatHistoryDao.all
                 .subscribeOn(Schedulers.io())
@@ -69,6 +71,7 @@ class ChatActivityPresenter @Inject constructor(private val restService: RestSer
     }
 
     private fun sendMessage(message: String) {
+        notSendMessage = null
         restService.getResponse(message)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -81,14 +84,15 @@ class ChatActivityPresenter @Inject constructor(private val restService: RestSer
                 .subscribe({
                     onReplyReceived(it)
                 }, {
-                    onSendError(it)
+                    onSendError(message, it)
                 })
                 .let { compositeDisposable.add(it) }
     }
 
-    private fun onSendError(error: Throwable?) {
+    private fun onSendError(message: String, error: Throwable?) {
+        notSendMessage = message
         ifViewAttached {
-            it.showError(error?.message ?: "Something went wrong")
+            it.showSendError(error?.message ?: "Something went wrong")
         }
     }
 
@@ -116,11 +120,21 @@ class ChatActivityPresenter @Inject constructor(private val restService: RestSer
         }
     }
 
+    fun onNetworkConnected() {
+        notSendMessage?.let {
+            ifViewAttached {
+                it.showSendProgress()
+                it.disableSendButton()
+            }
+            sendMessage(it)
+        }
+    }
+
     interface View : BaseView {
         fun showSendProgress()
         fun hideSendProgress()
         fun onReplyReceived(chatMessage: ChatMessage)
-        fun showError(message: String?)
+        fun showSendError(message: String?)
         fun disableSendButton()
         fun enableSendButton()
         fun textChangeObservable(): Observable<String?>
